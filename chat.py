@@ -4,7 +4,7 @@ class listen(threading.Thread):
     def __init__(self, sock, host):
         threading.Thread.__init__(self)
         self.sock = sock
-        self.host = host
+        self.name = host
         self.connection = True
     def run(self):
         while self.connection:
@@ -16,11 +16,13 @@ class listen(threading.Thread):
                 data = pickle.dumps(msg)
                 self.sock.send(data)
                 self.connection = False
-                print(self.host, "closed the connection, press any key")
+                print(self.name, "closed the connection, press any key")
             elif msg[0] == 'close_reply':
                 self.connection = False
+            elif msg[1].startswith('set name:'):
+                self.name = msg[1].split()[2]
             else:
-                print("[", self.host, "]:", msg[1])
+                print("[", self.name, "]:", msg[1])
         
         self.sock.close()
 
@@ -53,14 +55,12 @@ t_listen.start()
 
 print("Connection established with", target_host)
 
-msg = ['tag','msg']
+msg = ['tag', 'msg']
 
 try:
-    while True:
+    while t_listen.connection:
         msg[1] = input()
-        if not t_listen.connection: 
-            break
-        if msg[1]:
+        if msg[1] and t_listen.connection:
             data = pickle.dumps(msg)
             sock.send(data)
         
